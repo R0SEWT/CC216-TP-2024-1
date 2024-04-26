@@ -1,3 +1,5 @@
+#-------------------------CONFIGURACION PREVIA--------------------
+# Limpiamos pantalla
 rm(list=ls(all=TRUE))
 graphics.off()
 cat("\014")
@@ -16,8 +18,12 @@ checkingOutliers <- function(df) {
   }
 }
 
+#-------------------------LECTURA DE DATOS --------------------
+
 # Cargar los datos
-datos <- read.csv("C:/Users/rodyv/source/repos/V ciclo/R/GRUPO/TP/hotel_bookings.csv", header = TRUE, stringsAsFactors = FALSE)
+# TODO: extraer funcion y crear un archivo con la data limpia
+setwd("C:/Users/rodyv/source/repos/V ciclo/R/CC216-TP-2024-1")
+datos <- read.csv("data/hotel_bookings.csv", header = TRUE, stringsAsFactors = FALSE)
 View(datos)
 
 # Identificación de datos faltantes (NA)
@@ -34,6 +40,7 @@ checkingOutliers(datos)
 sapply(datos, class)
 
 
+#-------------------------1. RESERVAS POR TIPO DE HOTEL --------------------
 
 # (i)¿Cuántas reservas se realizan por tipo de hotel?
 # Contar las reservas por tipo de hotel
@@ -52,6 +59,8 @@ ggplot(reservas_por_hotel, aes(x = hotel, y = Reservas, fill = hotel)) +
        y = "Número de reservas") +
   theme_minimal()
 
+
+#-------------------------2. COMPORTAMIENTO DE LA DEMANDA --------------------
 
 # (ii)¿Está aumentando la demanda con el tiempo?
 # Convertir arrival_date_year a factor para que se muestre en el gráfico correctamente
@@ -74,6 +83,7 @@ ggplot(reservas_por_año, aes(x = arrival_date_year, y = Reservas, group = 1)) +
        y = "Número de reservas") +
   theme_minimal()
 
+#-------------------------3. ANALISIS DE TEMPORADAS --------------------
 
 # (iii)¿Cuándo se producen las temporadas de reservas: alta, media y baja?
 # Contar las reservas por mes
@@ -99,6 +109,7 @@ ggplot(reservas_por_mes, aes(x = arrival_date_month, y = Reservas, group = 1)) +
   theme(axis.text.x = element_text(angle = 45, hjust = 1)) +
   scale_x_discrete(labels = function(x) substr(x, 1, 3)) # Acortar los nombres de los meses para mejor visualización
 
+#-------------------------4. MES MAS BAJO  --------------------
 
 # (iv)¿Cuándo es menor la demanda de reservas?
 # Encontrar el mes con el menor número de reservas
@@ -119,7 +130,9 @@ ggplot(reservas_por_mes, aes(x = arrival_date_month, y = Reservas, group = 1)) +
   scale_x_discrete(labels = function(x) substr(x, 1, 3)) # Acortar los nombres de los meses para mejor visualización
 
 
-# (v)¿Cuántas reservas incluyen niños y/o bebés?  (MEJORABLE)
+#-------------------------5. RESERVAS CON NINOS Y BEBES  --------------------
+
+# (v)¿Cuántas reservas incluyen niños y/o bebés?  (MEJORABLE, que porcentaje representan)
 # Contar las reservas que incluyen niños y/o bebés
 reservas_con_niños <- datos %>%
   filter(children > 0 | babies > 0) %>%
@@ -137,6 +150,8 @@ ggplot(reservas_con_niños, aes(x = "", y = Reservas_con_niños)) +
   labs(title = "Reservas que incluyen niños y/o bebés",
        x = "",
        y = "Cantidad de reservas")
+
+#-------------------------6. ESTACIONAMIENTO  --------------------
 
 
 # (vi)¿Es importante contar con espacios de estacionamiento?
@@ -156,6 +171,8 @@ ggplot(datos, aes(x = required_car_parking_spaces)) +
        x = "Número de espacios de estacionamiento",
        y = "Frecuencia")
 
+#-------------------------5. CANCELACIONES POR MES  --------------------
+# TODO: cant no tan relevante -> %de cancelacion (o comparacion hist cancelacion/reserva)
 
 # (vii)¿En qué meses del año se producen más cancelaciones de reservas?
 # Agrupar los datos por mes y contar las cancelaciones de reservas
