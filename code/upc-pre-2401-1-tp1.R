@@ -1,10 +1,10 @@
 #-------------------------CONFIGURACION PREVIA--------------------
-# Limpiamos pantalla
+# 1. Limpiamos pantalla
 rm(list=ls(all=TRUE))
 graphics.off()
 cat("\014")
 
-# Cargar las librerías necesarias
+# 2. Cargamos las librerías necesarias
 library(ggplot2)
 library(dplyr)
 
@@ -18,46 +18,59 @@ checkingOutliers <- function(df) {
   }
 }
 
-#-------------------------LECTURA DE DATOS --------------------
+# Cargar datos limpios
 
-# Cargar los datos
-# TODO: extraer funcion y crear un archivo con la data limpia
-path = getwd()
-setwd("C:/Users/rodyv/source/repos/V ciclo/R/CC216-TP-2024-1") # que detecte donde estoy
-datos <- read.csv("C:/Users/Usuario/Downloads/hotel_bookings.csv", header = TRUE, stringsAsFactors = FALSE)
+path<-"../data/CLEAN_hotel_bookings.csv"
+datos <- read.csv(path, header = TRUE, stringsAsFactors = FALSE)
 
-# Crear un nuevo dataset para aplicar todos los filtros
-datos.limpios <- datos
+#-------------------------LECTURA DE DATOS (Solo la primera vez) --------------------
 
-# Eliminar filas con valores faltantes
-datos.limpios <- datos.limpios %>%
-  na.omit()
+# Logica de limpieza de datos
 
-# Filtrar valores atípicos para required_car_parking_spaces y total_of_special_requests
-datos.limpios <- datos.limpios %>%
-  filter(required_car_parking_spaces >= 0 & required_car_parking_spaces <= 1,
-         total_of_special_requests >= 0 & total_of_special_requests <= 2)
+limpiar_datos <- function(path) {
+  # Cargar los datos
+  datos <- read.csv(path, header = TRUE, stringsAsFactors = FALSE)
+  
+  # Crear un nuevo dataset para aplicar todos los filtros
+  datos_limpios <- datos
+  
+  # Eliminar filas con valores faltantes
+  datos_limpios <- datos_limpios %>%
+    na.omit()
+  
+  # Filtrar valores atípicos para required_car_parking_spaces y total_of_special_requests
+  datos_limpios <- datos_limpios %>%
+    filter(required_car_parking_spaces >= 0 & required_car_parking_spaces <= 1,
+           total_of_special_requests >= 0 & total_of_special_requests <= 2)
+  
+  # Filtrar valores atípicos para stays_in_weekend_nights y stays_in_week_nights
+  percentile_99_weekend <- quantile(datos_limpios$stays_in_weekend_nights, probs = 0.99)
+  datos_limpios <- datos_limpios %>%
+    filter(stays_in_weekend_nights <= percentile_99_weekend)
+  
+  percentile_99_week <- quantile(datos_limpios$stays_in_week_nights, probs = 0.99)
+  datos_limpios <- datos_limpios %>%
+    filter(stays_in_week_nights <= percentile_99_week)
+  
+  return(datos_limpios)
+}
 
-# Filtrar valores atípicos para stays_in_weekend_nights y stays_in_week_nights
-percentile_99_weekend <- quantile(datos.limpios$stays_in_weekend_nights, probs = 0.99)
-datos.limpios <- datos.limpios %>%
-  filter(stays_in_weekend_nights <= percentile_99_weekend)
 
-percentile_99_week <- quantile(datos.limpios$stays_in_week_nights, probs = 0.99)
-datos.limpios <- datos.limpios %>%
-  filter(stays_in_week_nights <= percentile_99_week)
+# Ruta relativa del csv
+path <- "../data/hotel_bookings.csv"
 
-# Guardar el nuevo dataset limpio en un archivo CSV
-write.csv(datos.limpios, "C:/Users/Usuario/Downloads/datos_limpios.csv", row.names = FALSE)
+# Llamar a la función para limpiar los datos
+datos_limpios <- limpiar_datos(path)
 
-# guardarlos 
+# Guardado de archivos limpios
+write.csv(datos_limpios, "../data/CLEAN_hotel_bookings.csv", row.names = FALSE)
 
 
 #-------------------------1. RESERVAS POR TIPO DE HOTEL --------------------
 
 # (i)¿Cuántas reservas se realizan por tipo de hotel?
 # Contar las reservas por tipo de hotel
-reservas_por_hotel <- datos.limpios %>%
+reservas_por_hotel <- datos_limpios %>%
   group_by(hotel) %>%
   summarise(Reservas = n())
 
@@ -78,10 +91,10 @@ ggplot(reservas_por_hotel, aes(x = hotel, y = Reservas, fill = hotel)) +
 
 # (ii)¿Está aumentando la demanda con el tiempo?
 # Convertir arrival_date_year a factor para que se muestre en el gráfico correctamente
-datos.limpios$arrival_date_year <- as.factor(datos.limpios$arrival_date_year)
+datos_limpios$arrival_date_year <- as.factor(datos_limpios$arrival_date_year)
 
 # Contar las reservas por año
-reservas_por_año <- datos.limpios %>%
+reservas_por_año <- datos_limpios %>%
   group_by(arrival_date_year) %>%
   summarise(Reservas = n())
 
@@ -103,7 +116,7 @@ ggplot(reservas_por_año, aes(x = arrival_date_year, y = Reservas, group = 1)) +
 
 # (iii)¿Cuándo se producen las temporadas de reservas: alta, media y baja?
 # Contar las reservas por mes
-reservas_por_mes <- datos.limpios %>%
+reservas_por_mes <- datos_limpios %>%
   group_by(arrival_date_month) %>%
   summarise(Reservas = n())
 
@@ -152,12 +165,12 @@ ggplot(reservas_por_mes, aes(x = arrival_date_month, y = Reservas, group = 1)) +
 
 # (v)¿Cuántas reservas incluyen niños y/o bebés?  
 # Contar las reservas que incluyen niños y/o bebés
-reservas_con_niños <- datos.limpios %>%
+reservas_con_niños <- datos_limpios %>%
   filter(children > 0 | babies > 0) %>%
   summarise(Reservas_con_niños = n())
 
-numero_reservas_con_niños <- sum(!is.na(datos.limpios$children) & datos.limpios$children > 0 | 
-                                   !is.na(datos.limpios$babies) & datos.limpios$babies > 0, na.rm = TRUE)
+numero_reservas_con_niños <- sum(!is.na(datos_limpios$children) & datos_limpios$children > 0 | 
+                                   !is.na(datos_limpios$babies) & datos_limpios$babies > 0, na.rm = TRUE)
 
 print("Número de reservas que incluyen niños y/o bebés:")
 print(numero_reservas_con_niños)
@@ -174,7 +187,7 @@ ggplot(reservas_con_niños, aes(x = "", y = Reservas_con_niños)) +
 # todo: otro grafico (cant personas) 
 # (vi)¿Es importante contar con espacios de estacionamiento?
 # Resumen estadístico
-resumen_estadistico <- datos.limpios %>%
+resumen_estadistico <- datos_limpios %>%
   summarise(Media = mean(required_car_parking_spaces, na.rm = TRUE),
             Mediana = median(required_car_parking_spaces, na.rm = TRUE),
             Desviacion_Estandar = sd(required_car_parking_spaces, na.rm = TRUE))
@@ -183,7 +196,7 @@ print("Resumen estadístico de los espacios de estacionamiento:")
 print(resumen_estadistico)
 
 # Visualización de la distribución de los espacios de estacionamiento
-ggplot(datos.limpios, aes(x = required_car_parking_spaces)) +
+ggplot(datos_limpios, aes(x = required_car_parking_spaces)) +
   geom_histogram(binwidth = 1, fill = "skyblue", color = "black") +
   labs(title = "Distribución de espacios de estacionamiento",
        x = "Número de espacios de estacionamiento",
@@ -194,7 +207,7 @@ ggplot(datos.limpios, aes(x = required_car_parking_spaces)) +
 
 # (vii)¿En qué meses del año se producen más cancelaciones de reservas?
 # Agrupar los datos por mes y contar las cancelaciones de reservas
-cancelaciones_por_mes <- datos.limpios %>%
+cancelaciones_por_mes <- datos_limpios %>%
   filter(is_canceled == 1) %>%
   group_by(arrival_date_month) %>%
   summarise(Cancelaciones = n())
