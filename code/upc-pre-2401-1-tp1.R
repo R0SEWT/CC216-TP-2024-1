@@ -18,36 +18,33 @@ checkingOutliers <- function(df) {
   }
 }
 
-# Cargar datos limpios
 
-path<-"../data/CLEAN_hotel_bookings.csv"
-datos <- read.csv(path, header = TRUE, stringsAsFactors = FALSE)
 
-#-------------------------LECTURA DE DATOS (Solo la primera vez) --------------------
+#-------------------------0. LIMPIEZA DE DATOS (Solo la primera vez) --------------------
 
 # Logica de limpieza de datos
 
 limpiar_datos <- function(path) {
-  # Cargar los datos
-  datos <- read.csv(path, header = TRUE, stringsAsFactors = FALSE)
   
-  # Crear un nuevo dataset para aplicar todos los filtros
+  datos <- read.csv(path, header = TRUE, stringsAsFactors = FALSE)
+  # Nuevo dataset para modificar
   datos_limpios <- datos
   
-  # Eliminar filas con valores faltantes
+  # Eliminar filas con valores faltantes 
   datos_limpios <- datos_limpios %>%
     na.omit()
   
-  # Filtrar valores atípicos para required_car_parking_spaces y total_of_special_requests
+  # Filtrar valores atípicos para 
+    # required_car_parking_spaces y total_of_special_requests
   datos_limpios <- datos_limpios %>%
     filter(required_car_parking_spaces >= 0 & required_car_parking_spaces <= 1,
            total_of_special_requests >= 0 & total_of_special_requests <= 2)
   
-  # Filtrar valores atípicos para stays_in_weekend_nights y stays_in_week_nights
+    # stays_in_weekend_nights 
   percentile_99_weekend <- quantile(datos_limpios$stays_in_weekend_nights, probs = 0.99)
   datos_limpios <- datos_limpios %>%
     filter(stays_in_weekend_nights <= percentile_99_weekend)
-  
+    # y stays_in_week_nights
   percentile_99_week <- quantile(datos_limpios$stays_in_week_nights, probs = 0.99)
   datos_limpios <- datos_limpios %>%
     filter(stays_in_week_nights <= percentile_99_week)
@@ -56,17 +53,24 @@ limpiar_datos <- function(path) {
 }
 
 
-# Ruta relativa del csv
+# Ruta relativa del csv de origen
 path <- "../data/hotel_bookings.csv"
 
-# Llamar a la función para limpiar los datos
+# Limpiamos los datos
 datos_limpios <- limpiar_datos(path)
 
-# Guardado de archivos limpios
+# Guardamos nuestros datos limpios
 write.csv(datos_limpios, "../data/CLEAN_hotel_bookings.csv", row.names = FALSE)
+
+#------------------------ 0. CARGAR DATOS LIMPIOS----------------------
+
+# Cargamos datos limpios (DEBEN EXISTIR)
+path<-"../data/CLEAN_hotel_bookings.csv"
+datos_limpios <- read.csv(path, header = TRUE, stringsAsFactors = FALSE)
 
 
 #-------------------------1. RESERVAS POR TIPO DE HOTEL --------------------
+
 
 # (i)¿Cuántas reservas se realizan por tipo de hotel?
 # Contar las reservas por tipo de hotel
@@ -77,14 +81,21 @@ reservas_por_hotel <- datos_limpios %>%
 print("Reservas por tipo de hotel:")
 print(reservas_por_hotel)
 
-# Visualización
-ggplot(reservas_por_hotel, aes(x = hotel, y = Reservas, fill = hotel)) +
-  geom_bar(stat = "identity") +
-  labs(title = "Reservas por tipo de hotel",
-       x = "Tipo de hotel",
-       y = "Número de reservas") +
-  theme_minimal()
+# Visualización en gráfico circular
 
+# Calcular los porcentajes
+reservas_por_hotel <- reservas_por_hotel %>%
+  mutate(Porcentaje = Reservas / sum(Reservas) * 100)
+
+# Crear el gráfico circular con porcentajes
+ggplot(reservas_por_hotel, aes(x = "", y = Porcentaje, fill = hotel)) +
+  geom_bar(stat = "identity", width = 1) +
+  coord_polar(theta = "y") +
+  geom_text(aes(label = paste0(round(Porcentaje, 1), "%")),
+            position = position_stack(vjust = 0.5)) +
+  theme_void() +
+  labs(title = "Reservas por tipo de hotel",
+       fill = "Tipo de hotel")
 
 #-------------------------2. COMPORTAMIENTO DE LA DEMANDA --------------------
 #Si hay tiempo realizar un analisis de la demanda por mes y ano con un diagrama de cajas
