@@ -99,7 +99,7 @@ ggplot(reservas_por_hotel, aes(x = "", y = Porcentaje, fill = hotel)) +
 
 #-------------------------2. COMPORTAMIENTO DE LA DEMANDA --------------------
 #Si hay tiempo realizar un analisis de la demanda por mes y ano con un diagrama de cajas
-
+# mostrar fecha de inicio y fecha de corte
 # (ii)¿Está aumentando la demanda con el tiempo?
 # Convertir arrival_date_year a factor para que se muestre en el gráfico correctamente
 datos_limpios$arrival_date_year <- as.factor(datos_limpios$arrival_date_year)
@@ -175,6 +175,13 @@ ggplot(reservas_por_mes, aes(x = arrival_date_month, y = Reservas, group = 1)) +
 # MEJORABLE: Superponer Total por detras
 
 # (v)¿Cuántas reservas incluyen niños y/o bebés?  
+
+reservas_totales <- datos_limpios %>%
+  summarise(Reservas = n())
+
+#print("Numero de reservas totales: ")
+#print(reservas_totales)
+
 # Contar las reservas que incluyen niños y/o bebés
 reservas_con_niños <- datos_limpios %>%
   filter(children > 0 | babies > 0) %>%
@@ -186,12 +193,24 @@ numero_reservas_con_niños <- sum(!is.na(datos_limpios$children) & datos_limpios
 print("Número de reservas que incluyen niños y/o bebés:")
 print(numero_reservas_con_niños)
 
-# Visualización
-ggplot(reservas_con_niños, aes(x = "", y = Reservas_con_niños)) +
-  geom_bar(stat = "identity", fill = "purple") +
-  labs(title = "Reservas que incluyen niños y/o bebés",
-       x = "",
+# Combianamos los datos
+resume <- data.frame(Tipo = c("Total", "Con ninos y bebes"),
+                     Cantidad = c(reservas_totales$Reservas, reservas_con_niños$Reservas_con_niños))
+# Visualizacion
+ggplot(resume, aes(x = Tipo, y = Cantidad, fill = Tipo)) +
+  geom_bar(stat = "identity", position = "dodge") +
+  geom_text(aes(label = Cantidad), position = position_dodge(width = 0.9), vjust = +2) +
+  scale_y_log10() + # Escala logaritmica 
+  scale_fill_manual(values = c("#C767CB", "salmon"))
+  labs(title = "Reservas totales vs. Reservas con niños y/o bebés",
+       x = "Tipo de reserva",
        y = "Cantidad de reservas")
+
+# informacion porcentual 
+percent = round(reservas_con_niños$Reservas_con_niños / reservas_totales$Reservas * 100, 2)
+  
+print("Del total, las reservas con ninos y/o bebes representan un: ")
+print(percent)
 
 #-------------------------6. ESTACIONAMIENTO  --------------------
 
