@@ -149,6 +149,30 @@ ggplot(reservas_por_mes, aes(x = arrival_date_month, y = Reservas, group = 1)) +
   theme(axis.text.x = element_text(angle = 45, hjust = 1)) +
   scale_x_discrete(labels = function(x) substr(x, 1, 3)) # Acortar los nombres de los meses para mejor visualización
 
+# Agrupar los meses en temporadas
+reservas_por_temporada <- reservas_por_mes %>%
+  mutate(Temporada = case_when(
+    arrival_date_month %in% c("January", "February", "March") ~ "Primavera",
+    arrival_date_month %in% c("April", "May", "June") ~ "Verano",
+    arrival_date_month %in% c("July", "August", "September") ~ "Otoño",
+    arrival_date_month %in% c("October", "November", "December") ~ "Invierno"
+  ))
+
+# Sumarizar las reservas por temporada
+reservas_por_temporada <- reservas_por_temporada %>%
+  group_by(Temporada) %>%
+  summarise(Reservas = sum(Reservas))
+print(reservas_por_temporada)
+
+# Visualización de reservas por temporada con línea
+ggplot(reservas_por_temporada, aes(x = Temporada, y = Reservas, fill = Temporada)) +
+  geom_bar(stat = "identity", position = "dodge") +
+  geom_text(aes(label = Reservas), position = position_dodge(width = 1), vjust = 2) +
+  labs(title = "Reservas por temporada",
+       x = "Temporada",
+       y = "Cantidad de reservas")
+
+
 #-------------------------4. MES MAS BAJO  --------------------
 # TODO: Realizar histograma y ordenar ascendente (5 menor dem (muestra))
 
