@@ -102,27 +102,42 @@ ggplot(reservas_por_hotel, aes(x = "", y = Porcentaje, fill = hotel)) +
 
 #-------------------------2. COMPORTAMIENTO DE LA DEMANDA --------------------
 #Si hay tiempo realizar un analisis de la demanda por mes y ano con un diagrama de cajas
-# mostrar fecha de inicio y fecha de corte
-# (ii)¿Está aumentando la demanda con el tiempo?
-# Convertir arrival_date_year a factor para que se muestre en el gráfico correctamente
-datos_limpios$arrival_date_year <- as.factor(datos_limpios$arrival_date_year)
 
-# Contar las reservas por año
-reservas_por_año <- datos_limpios %>%
-  group_by(arrival_date_year) %>%
+# (ii)¿Está aumentando la demanda con el tiempo?
+# revisar reservas por fecha de realizacion de la reserva
+
+
+fecha_minima<-min(datos_limpios$reservation_status_date)
+print("La primera reserva registrada data de:")
+print(fecha_minima)
+
+fecha_maxima<-max(datos_limpios$reservation_status_date)
+print("La ultima reserva registrada data de:")
+print(fecha_maxima)
+# Observamos que los anos 2014 y 2017 estan incompletos (les faltan entre 2 y 3 m)
+# Propuesta: La temporada inicia el mes 10 del anterior ano y culmina el mes 9 del ano correspondiente
+datos_limpios <- datos_limpios %>%
+  mutate(Temporada = case_when(
+    arrival_date_month >= 10 ~ paste(arrival_date_year, "-", arrival_date_year + 1, sep = ""),
+    TRUE ~ paste(arrival_date_year - 1, "-", arrival_date_year, sep = "")
+  ))
+# Contar las reservas por temporada
+reservas_por_temporada <- datos_limpios %>%
+  group_by(Temporada) %>%
   summarise(Reservas = n())
 
-print("Reservas por año:")
-print(reservas_por_año)
+print(reservas_por_temporada)
 
-# Visualización
-ggplot(reservas_por_año, aes(x = arrival_date_year, y = Reservas, group = 1)) +
+# Visualización de reservas por temporada
+ggplot(reservas_por_temporada, aes(x = Temporada, y = Reservas, group = 1)) +
   geom_line(color = "blue") +
   geom_point(color = "blue") +
-  labs(title = "Reservas por año",
-       x = "Año",
-       y = "Número de reservas") +
+  labs(title = "Reservas por Temporada Anual",
+       x = "Temporada",
+       y = "Número de Reservas") +
   theme_minimal()
+
+
 
 #-------------------------3. ANALISIS DE TEMPORADAS --------------------
 # ns si es posible segmentacion grafica x temporada
