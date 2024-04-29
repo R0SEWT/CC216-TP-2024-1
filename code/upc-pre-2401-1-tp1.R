@@ -86,11 +86,11 @@ print(reservas_por_hotel)
 
 # Visualización en gráfico circular
 
-# Calcular los porcentajes
+  # Calcular los porcentajes
 reservas_por_hotel <- reservas_por_hotel %>%
   mutate(Porcentaje = Reservas / sum(Reservas) * 100)
 
-# Crear el gráfico circular con porcentajes
+  # Crear el gráfico circular con porcentajes
 ggplot(reservas_por_hotel, aes(x = "", y = Porcentaje, fill = hotel)) +
   geom_bar(stat = "identity", width = 1) +
   coord_polar(theta = "y") +
@@ -101,11 +101,9 @@ ggplot(reservas_por_hotel, aes(x = "", y = Porcentaje, fill = hotel)) +
        fill = "Tipo de hotel")
 
 #-------------------------2. COMPORTAMIENTO DE LA DEMANDA --------------------
-#Si hay tiempo realizar un analisis de la demanda por mes y ano con un diagrama de cajas
-
 # (ii)¿Está aumentando la demanda con el tiempo?
-# revisar reservas por fecha de realizacion de la reserva
 
+# revisar primera y ultima reserva
 
 fecha_minima<-min(datos_limpios$reservation_status_date)
 print("La primera reserva registrada data de:")
@@ -114,8 +112,11 @@ print(fecha_minima)
 fecha_maxima<-max(datos_limpios$reservation_status_date)
 print("La ultima reserva registrada data de:")
 print(fecha_maxima)
+
 # Observamos que los anos 2014 y 2017 estan incompletos (les faltan entre 2 y 3 m)
-# Propuesta: La temporada inicia el mes 10 del anterior ano y culmina el mes 9 del ano correspondiente
+  # Propuesta: La temporada iniciara el mes 10 del anterior ano 
+  # y culmina el mes 9 del ano correspondiente
+
 datos_limpios <- datos_limpios %>%
   mutate(Temporada = case_when(
     arrival_date_month >= 10 ~ paste(arrival_date_year, "-", arrival_date_year + 1, sep = ""),
@@ -140,8 +141,7 @@ ggplot(reservas_por_temporada, aes(x = Temporada, y = Reservas, group = 1)) +
 
 
 #-------------------------3. ANALISIS DE TEMPORADAS --------------------
-# ns si es posible segmentacion grafica x temporada
-# relacionarlo con la temperatura de cada localizacion
+# TODO: Eliminar zonas vacias: Definir donde inician y terminan 
 
 # (iii)¿Cuándo se producen las temporadas de reservas: alta, media y baja?
 # Contar las reservas por mes
@@ -167,11 +167,11 @@ ggplot(reservas_por_mes, aes(x = arrival_date_month, y = Reservas, group = 1)) +
   theme(axis.text.x = element_text(angle = 45, hjust = 1)) +
   scale_x_discrete(labels = function(x) substr(x, 1, 3)) # Acortar los nombres de los meses para mejor visualización
 
-# Visualización con segmentos resaltados
+# Visualización con segmentos resaltados post analicis
 ggplot(reservas_por_mes, aes(x = arrival_date_month, y = Reservas, group = 1)) +
   geom_line(color = "blue") +
   geom_point(color = "blue") +
-  # Añadir rectángulos de relleno para resaltar los segmentos de [mayo-agosto] y [septiembre-diciembre]
+  # Aqui configuras los meses de inicio, color y transparencia
   geom_rect(aes(xmin = "January", xmax = "February", ymin = -Inf, ymax = Inf), fill = "red", alpha = 0.01) +
   geom_rect(aes(xmin = "March", xmax = "June", ymin = -Inf, ymax = Inf), fill = "yellow", alpha = 0.01) +
   geom_rect(aes(xmin = "July", xmax = "August", ymin = -Inf, ymax = Inf), fill = "green", alpha = 0.01) +
@@ -208,8 +208,6 @@ ggplot(reservas_por_mes, aes(x = arrival_date_month, y = Reservas, group = 1)) +
 
 
 #-------------------------5. RESERVAS CON NINOS Y BEBES  --------------------
-# MEJORABLE: Superponer Total por detras
-
 # (v)¿Cuántas reservas incluyen niños y/o bebés?  
 
 reservas_totales <- datos_limpios %>%
@@ -250,7 +248,9 @@ print(percent)
 
 #-------------------------6. ESTACIONAMIENTO  --------------------
 
-# todo: otro grafico (cant personas) 
+# todo: otro grafico (cant personas) averiguar porcentaje
+# Cada cuantas personas debemos tener un espacio de estacionamiento???
+
 # (vi)¿Es importante contar con espacios de estacionamiento?
 # Resumen estadístico
 resumen_estadistico <- datos_limpios %>%
