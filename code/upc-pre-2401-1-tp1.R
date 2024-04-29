@@ -69,6 +69,9 @@ path<-"../data/CLEAN_hotel_bookings.csv"
 datos_limpios <- read.csv(path, header = TRUE, stringsAsFactors = FALSE)
 
 
+#-------------------------OBSERVACION DE DATOS--------------------
+str(datos_limpios)
+
 #-------------------------1. RESERVAS POR TIPO DE HOTEL --------------------
 
 
@@ -155,8 +158,9 @@ ggplot(reservas_por_mes, aes(x = arrival_date_month, y = Reservas, group = 1)) +
   geom_point(color = "blue") +
   # Añadir rectángulos de relleno para resaltar los segmentos de [mayo-agosto] y [septiembre-diciembre]
   geom_rect(aes(xmin = "January", xmax = "February", ymin = -Inf, ymax = Inf), fill = "red", alpha = 0.01) +
-  geom_rect(aes(xmin = "May", xmax = "August", ymin = -Inf, ymax = Inf), fill = "green", alpha = 0.01) +
-  geom_rect(aes(xmin = "September", xmax = "November", ymin = -Inf, ymax = Inf), fill = "lightblue", alpha = 0.01) +
+  geom_rect(aes(xmin = "March", xmax = "June", ymin = -Inf, ymax = Inf), fill = "yellow", alpha = 0.01) +
+  geom_rect(aes(xmin = "July", xmax = "August", ymin = -Inf, ymax = Inf), fill = "green", alpha = 0.01) +
+  geom_rect(aes(xmin = "September", xmax = "October", ymin = -Inf, ymax = Inf), fill = "yellow", alpha = 0.01) +
   geom_rect(aes(xmin = "November", xmax = "December", ymin = -Inf, ymax = Inf), fill = "red", alpha = 0.01) +
   
   labs(title = "Reservas por mes",
@@ -267,6 +271,8 @@ meses_ordenados <- c("January", "February", "March", "April", "May", "June",
                      "July", "August", "September", "October", "November", "December")
 cancelaciones_por_mes$arrival_date_month <- factor(cancelaciones_por_mes$arrival_date_month, levels = meses_ordenados)
 
+# ejecutar analisis de temporadas
+
 # Visualizar los datos
 ggplot(cancelaciones_por_mes, aes(x = arrival_date_month, y = Cancelaciones)) +
   geom_bar(stat = "identity", fill = "skyblue", color = "black") +
@@ -274,3 +280,6 @@ ggplot(cancelaciones_por_mes, aes(x = arrival_date_month, y = Cancelaciones)) +
        x = "Mes",
        y = "Número de cancelaciones") +
   theme(axis.text.x = element_text(angle = 45, hjust = 1))
+
+
+# Visualización percent cancelaciones por mes
