@@ -106,6 +106,8 @@ ggplot(reservas_por_hotel, aes(x = "", y = Porcentaje, fill = hotel)) +
 # (ii)¿Está aumentando la demanda con el tiempo?
 
 # (ii).a Llegada de clientes por periodo
+
+# Fechas minimas
 datos_limpios$arrival_date_month_num <- match(datos_limpios$arrival_date_month, month.name)
 
 # Combinar los campos en una columna de fecha
@@ -125,30 +127,22 @@ fecha_maxima<-max(datos_limpios$arrival_date)
 print("El ultimo cliente llego el:")
 print(fecha_maxima)
 
-# Observamos que los anos 2015 y 2017 estan incompletos (les faltan entre 2 y 3 m)
-# Propuesta: La temporada iniciara el mes 7 del ano actual y dura un ano
+clientes_por_año <- datos_limpios %>%
+  group_by(arrival_date_year) %>%
+  summarise(Clientes = n())
 
-datos_limpios <- datos_limpios %>%
-  mutate(Periodo = case_when(
-    arrival_date_month >= 7 ~ paste(arrival_date_year, "-", arrival_date_year + 1, sep = ""),
-    TRUE ~ paste(arrival_date_year, "-", arrival_date_year, sep = "")
-  ))
+print("Clientes por año:")
+print(clientes_por_año)
 
-# Contar las reservas efectivas por temporada
-reservas_efectivas_por_periodo <- datos_limpios %>%
-  group_by(Periodo) %>%
-  summarise(Reservas = n())
 
-print(reservas_efectivas_por_periodo)
-
-# Visualización de reservas por periodo
-ggplot(reservas_efectivas_por_periodo, aes(x = Periodo, y = Reservas, group = 1)) +
+ggplot(clientes_por_año, aes(x = arrival_date_year, y = Clientes, group = 1)) +
   geom_line(color = "blue") +
   geom_point(color = "blue") +
   labs(title = "Clientes por Periodo Anual",
-       x = "Periodo",
-       y = "Arribo de clientes") +
+       x = "Año",
+       y = "Número de arribos") +
   theme_minimal()
+
 
 # (iii).b Analisis de arribo de clientes para el mismo mes, para cada ano
 
@@ -162,12 +156,15 @@ h_arribos_mes_ano <- datos_limpios %>%
   group_by(Ano, Mes) %>%
   summarise(Clientes = n(), .groups = "drop")
 
+print(h_arribos_mes_ano, n = 5)
 
 
 # Visualización de reservas por mes y año
 ggplot(h_arribos_mes_ano, aes(x = Ano, y = Clientes, group = Mes)) +
   geom_line(aes(color = factor(Mes))) +
   geom_point(aes(color = factor(Mes))) +
+  geom_rect(aes(xmin = 2015, xmax = 2016, ymin = -Inf, ymax = Inf), fill = "salmon", alpha = 0.005)+
+  geom_rect(aes(xmin = 2016, xmax = 2017, ymin = -Inf, ymax = Inf), fill = "lightblue", alpha = 0.01)+
   labs(title = "Arribos por Mes y Año",
        x = "Año",
        y = "Clientes",
@@ -186,6 +183,8 @@ datos_limpios <- datos_limpios %>%
 h_reservas_mes_ano <- datos_limpios %>%
   group_by(Ano, Mes) %>%
   summarise(Reservas = n())
+
+print(h_reservas_mes_ano, n = 5)
 
 # Visualización de reservas por mes y año
 ggplot(h_reservas_mes_ano, aes(x = Ano, y = Reservas, group = Mes)) +
@@ -273,8 +272,7 @@ ggplot(reservas_por_mes, aes(x = arrival_date_month, y = Reservas, group = 1)) +
 reservas_totales <- datos_limpios %>%
   summarise(Reservas = n())
 
-#print("Numero de reservas totales: ")
-#print(reservas_totales)
+
 
 # Contar las reservas que incluyen niños y/o bebés
 reservas_con_niños <- datos_limpios %>%
@@ -284,8 +282,10 @@ reservas_con_niños <- datos_limpios %>%
 numero_reservas_con_niños <- sum(!is.na(datos_limpios$children) & datos_limpios$children > 0 | 
                                    !is.na(datos_limpios$babies) & datos_limpios$babies > 0, na.rm = TRUE)
 
+
 print("Número de reservas que incluyen niños y/o bebés:")
 print(numero_reservas_con_niños)
+
 
 # Combianamos los datos
 resume <- data.frame(Tipo = c("Total", "Con ninos y bebes"),
