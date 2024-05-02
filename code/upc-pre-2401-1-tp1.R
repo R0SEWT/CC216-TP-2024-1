@@ -7,6 +7,8 @@ cat("\014")
 # 2. Cargamos las librerías necesarias
 library(ggplot2)
 library(dplyr)
+library(lubridate)
+
 
 # Definir la función checkingOutliers
 checkingOutliers <- function(df) {
@@ -103,40 +105,98 @@ ggplot(reservas_por_hotel, aes(x = "", y = Porcentaje, fill = hotel)) +
 #-------------------------2. COMPORTAMIENTO DE LA DEMANDA --------------------
 # (ii)¿Está aumentando la demanda con el tiempo?
 
-# revisar primera y ultima reserva
+# (ii).a Llegada de clientes por periodo
+datos_limpios$arrival_date_month_num <- match(datos_limpios$arrival_date_month, month.name)
 
-fecha_minima<-min(datos_limpios$reservation_status_date)
-print("La primera reserva registrada data de:")
+# Combinar los campos en una columna de fecha
+datos_limpios$arrival_date <- as.Date(paste(datos_limpios$arrival_date_year, 
+                                            datos_limpios$arrival_date_month_num, 
+                                            datos_limpios$arrival_date_day_of_month, 
+                                            sep = "-"), 
+                                      format = "%Y-%m-%d")
+
+# revisar primera y ultima fecha de llegada (CLientes)
+
+fecha_minima<-min(datos_limpios$arrival_date)
+print("El primer cliente llego el:")
 print(fecha_minima)
 
-fecha_maxima<-max(datos_limpios$reservation_status_date)
-print("La ultima reserva registrada data de:")
+fecha_maxima<-max(datos_limpios$arrival_date)
+print("El ultimo cliente llego el:")
 print(fecha_maxima)
 
-# Observamos que los anos 2014 y 2017 estan incompletos (les faltan entre 2 y 3 m)
-  # Propuesta: La temporada iniciara el mes 10 del anterior ano 
-  # y culmina el mes 9 del ano correspondiente
+# Observamos que los anos 2015 y 2017 estan incompletos (les faltan entre 2 y 3 m)
+# Propuesta: La temporada iniciara el mes 7 del ano actual y dura un ano
 
 datos_limpios <- datos_limpios %>%
-  mutate(Temporada = case_when(
-    arrival_date_month >= 10 ~ paste(arrival_date_year, "-", arrival_date_year + 1, sep = ""),
-    TRUE ~ paste(arrival_date_year - 1, "-", arrival_date_year, sep = "")
+  mutate(Periodo = case_when(
+    arrival_date_month >= 7 ~ paste(arrival_date_year, "-", arrival_date_year + 1, sep = ""),
+    TRUE ~ paste(arrival_date_year, "-", arrival_date_year, sep = "")
   ))
-# Contar las reservas por temporada
-reservas_por_temporada <- datos_limpios %>%
-  group_by(Temporada) %>%
+
+# Contar las reservas efectivas por temporada
+reservas_efectivas_por_periodo <- datos_limpios %>%
+  group_by(Periodo) %>%
   summarise(Reservas = n())
 
-print(reservas_por_temporada)
+print(reservas_efectivas_por_periodo)
 
-# Visualización de reservas por temporada
-ggplot(reservas_por_temporada, aes(x = Temporada, y = Reservas, group = 1)) +
+# Visualización de reservas por periodo
+ggplot(reservas_efectivas_por_periodo, aes(x = Periodo, y = Reservas, group = 1)) +
   geom_line(color = "blue") +
   geom_point(color = "blue") +
-  labs(title = "Reservas por Temporada Anual",
-       x = "Temporada",
-       y = "Número de Reservas") +
+  labs(title = "Clientes por Periodo Anual",
+       x = "Periodo",
+       y = "Arribo de clientes") +
   theme_minimal()
+
+# (iii).b Analisis de arribo de clientes para el mismo mes, para cada ano
+
+
+datos_limpios <- datos_limpios %>%
+  mutate(Mes = arrival_date_month_num,
+         Ano = arrival_date_year)
+
+
+h_arribos_mes_ano <- datos_limpios %>%
+  group_by(Ano, Mes) %>%
+  summarise(Clientes = n(), .groups = "drop")
+
+
+
+# Visualización de reservas por mes y año
+ggplot(h_arribos_mes_ano, aes(x = Ano, y = Clientes, group = Mes)) +
+  geom_line(aes(color = factor(Mes))) +
+  geom_point(aes(color = factor(Mes))) +
+  labs(title = "Arribos por Mes y Año",
+       x = "Año",
+       y = "Clientes",
+       color = "Mes") +
+  theme_minimal()
+
+
+
+# (ii).c Reserva de clientes por periodo
+
+datos_limpios <- datos_limpios %>%
+  mutate(Mes = month(reservation_status_date),
+         Ano = year(reservation_status_date))
+
+# Agrupa y resume los datos por mes y año
+h_reservas_mes_ano <- datos_limpios %>%
+  group_by(Ano, Mes) %>%
+  summarise(Reservas = n())
+
+# Visualización de reservas por mes y año
+ggplot(h_reservas_mes_ano, aes(x = Ano, y = Reservas, group = Mes)) +
+  geom_line(aes(color = factor(Mes))) +
+  geom_point(aes(color = factor(Mes))) +
+  labs(title = "Reservas por Mes y Año",
+       x = "Año",
+       y = "Número de Reservas",
+       color = "Mes") +
+  theme_minimal()
+
 
 
 
@@ -173,10 +233,10 @@ ggplot(reservas_por_mes, aes(x = arrival_date_month, y = Reservas, group = 1)) +
   geom_point(color = "blue") +
   # Aqui configuras los meses de inicio, color y transparencia
   geom_rect(aes(xmin = "January", xmax = "February", ymin = -Inf, ymax = Inf), fill = "red", alpha = 0.01) +
-  geom_rect(aes(xmin = "March", xmax = "June", ymin = -Inf, ymax = Inf), fill = "yellow", alpha = 0.01) +
-  geom_rect(aes(xmin = "July", xmax = "August", ymin = -Inf, ymax = Inf), fill = "green", alpha = 0.01) +
-  geom_rect(aes(xmin = "September", xmax = "October", ymin = -Inf, ymax = Inf), fill = "yellow", alpha = 0.01) +
-  geom_rect(aes(xmin = "November", xmax = "December", ymin = -Inf, ymax = Inf), fill = "red", alpha = 0.01) +
+  geom_rect(aes(xmin = "February", xmax = "June", ymin = -Inf, ymax = Inf), fill = "yellow", alpha = 0.01) +
+  geom_rect(aes(xmin = "June", xmax = "August", ymin = -Inf, ymax = Inf), fill = "green", alpha = 0.01) +
+  geom_rect(aes(xmin = "August", xmax = "October", ymin = -Inf, ymax = Inf), fill = "yellow", alpha = 0.01) +
+  geom_rect(aes(xmin = "October", xmax = "December", ymin = -Inf, ymax = Inf), fill = "red", alpha = 0.01) +
   
   labs(title = "Reservas por mes",
        x = "Mes",
